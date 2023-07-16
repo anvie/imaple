@@ -25,7 +25,8 @@ with IMAPClient(HOST, port=9933, ssl_context=ssl_context) as server:
 
     for msgid, data in server.fetch(messages, ['ENVELOPE']).items():
         envelope = data[b'ENVELOPE']
-        print('ID #%d: "%s" received %s' % (msgid, envelope.subject.decode(), envelope.date))
+        sender = "<%s %s@%s>" % (envelope.from_[0].name.decode(), envelope.from_[0].mailbox.decode(), envelope.from_[0].host.decode())
+        print('ID #%d: "%s" - %s - received %s' % (msgid, envelope.subject.decode(), sender, envelope.date))
 
     server.logout()
 
