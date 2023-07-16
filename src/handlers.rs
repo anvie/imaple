@@ -1,7 +1,9 @@
 use crate::imap_serv::*;
 use crate::result::Result;
 
+use imap_codec::fetch::MacroOrMessageDataItemNames;
 use imap_codec::search::SearchKey;
+use imap_codec::sequence::{SeqOrUid, Sequence, SequenceSet};
 use imap_codec::{
     command::Command,
     core::*,
@@ -109,6 +111,36 @@ command_handler!(SearchHandler, Search, (s, cmd,
 });
 
 command_handler!(LogoutHandler, Logout, (s, cmd) => {
+    s.status("BYE IMAP4rev1 Server logging out").await;
     s.ok_completed(&cmd.tag, "LOGOUT").await;
+    Ok(CommandPipe::Next(cmd.clone(), None))
+});
+
+command_handler!(FetchHandler, Fetch, (s, cmd,
+    [sequence_set: SequenceSet, macro_or_item_names: MacroOrMessageDataItemNames<'_>, uid:bool] ) =>
+{
+    match sequence_set.0.as_ref()[0] {
+        Sequence::Single(seq_or_uid) => {
+            debug!("seq_or_uid: {:?}", seq_or_uid);
+            match seq_or_uid {
+                SeqOrUid::Value(seq) => {
+                    debug!("seq: {:?}", seq);
+                    let resp = format!(
+                        "* {msgid} FETCH (FLAGS (\\Seen) BODY[HEADER.FIELDS (SUBJECT)] {{18}}\r\nSubject: crash\r\n)\r\n", msgid=seq.get()
+                    );
+                    debug!(":> {}", resp);
+                    let _ = s.write_strln(&resp).await;
+                }
+                SeqOrUid::Asterisk => {
+                    debug!("uid: {:?}", uid);
+                }
+            }
+        }
+        Sequence::Range(a, b) => {
+            debug!("seq ({:?}-{:?}):", a, b);
+        }
+    }
+
+    s.ok_completed(&cmd.tag, cmd.name()).await;
     Ok(CommandPipe::Next(cmd.clone(), None))
 });

@@ -21,3 +21,11 @@ with IMAPClient(HOST, port=9933, ssl_context=ssl_context) as server:
     messages = server.search(['FROM', 'best-friend@domain.com'])
     print("%d messages from our best friend" % len(messages))
 
+    messages.pop()
+
+    for msgid, data in server.fetch(messages, ['ENVELOPE']).items():
+        envelope = data[b'ENVELOPE']
+        print('ID #%d: "%s" received %s' % (msgid, envelope.subject.decode(), envelope.date))
+
+    server.logout()
+

@@ -48,6 +48,11 @@ where
         self.socket.write_all(buf.as_bytes()).await?;
         Ok(())
     }
+    pub async fn write_strln(&mut self, buf: &str) -> Result<()> {
+        self.socket.write_all(buf.as_bytes()).await?;
+        self.socket.write_all(b"\r\n").await?;
+        Ok(())
+    }
 
     pub async fn ok(&mut self, tag: &str, msg: &str) -> Result<()> {
         debug!(":> {} {}", tag, msg);

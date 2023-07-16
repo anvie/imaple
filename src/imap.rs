@@ -62,6 +62,20 @@ where
         CommandBody::Logout => {
             LogoutHandler::handle(&mut imap_sock, &cmd).await
         }
+        CommandBody::Fetch {
+            sequence_set,
+            macro_or_item_names,
+            uid,
+        } => {
+            FetchHandler::handle(
+                &mut imap_sock,
+                &cmd,
+                sequence_set,
+                macro_or_item_names,
+                uid,
+            )
+            .await
+        }
         _ => Err(anyhow!("Invalid command body for {}", cmd.name()).into()),
     }
 }
