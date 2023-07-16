@@ -4,7 +4,7 @@ use log::debug;
 
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use imap_codec::{command::Command, core::Tag};
+use imap_codec::{codec::Encode, command::Command, core::Tag, response::Data};
 
 pub enum CommandPipe<'a> {
     // next and prev command
@@ -48,6 +48,12 @@ where
         self.socket.write_all(buf.as_bytes()).await?;
         Ok(())
     }
+
+    pub async fn write_data(&mut self, data: Data<'_>) -> Result<()> {
+        self.write(data.encode().dump().as_slice()).await?;
+        Ok(())
+    }
+
     pub async fn write_strln(&mut self, buf: &str) -> Result<()> {
         self.socket.write_all(buf.as_bytes()).await?;
         self.socket.write_all(b"\r\n").await?;

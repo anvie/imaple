@@ -4,7 +4,6 @@ use std::num::NonZeroU32;
 use crate::imap_serv::*;
 use crate::result::Result;
 
-
 use imap_codec::codec::Encode;
 use imap_codec::envelope::{Address, Envelope};
 use imap_codec::fetch::{MacroOrMessageDataItemNames, MessageDataItem};
@@ -179,7 +178,7 @@ command_handler!(FetchHandler, Fetch, (s, cmd,
 
                     debug!(":> {}", resp);
 
-                    let _ = s.write(data.encode().dump().as_slice()).await;
+                    let _ = s.write_data(data).await;
 
                 }
                 SeqOrUid::Asterisk => {
