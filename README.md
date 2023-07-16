@@ -1,5 +1,7 @@
 # IMAPLE: IMAP Service based on RFC-3501
 
+![](img/imaple.png)
+
 IMAPLE is an IMAP service based on RFC-3501. IMAPLE is currently in heavy development and is not production ready. Please use with caution as breaking changes may occur.
 
 ## Features
