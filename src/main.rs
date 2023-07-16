@@ -29,7 +29,6 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 mod cert;
-mod cert_old;
 mod cmd_handlers;
 mod error;
 mod imap;
@@ -165,13 +164,6 @@ async fn start_imap_server(
                         return;
                     }
                 };
-
-                // debug!("buf[0..n]: {:?}", String::from_utf8_lossy(&buf[0..n]));
-                // let mut buf = buf[0..n].to_vec();
-                // // debug!("buf[n-2..n]: {:?}", &buf[n-2..n]);
-                // if &buf[n-2..n] != &[13, 10] { // apabila tidak diakhiri dengan CRLF
-                //     buf.extend_from_slice(&[13, 10]); // maka tambahkan CRLF
-                // }
 
                 // apabila buff tidak diakhiri dengan CRLF maka tambahkan CRLF di akhir array
                 if &buf[n - 2..n] != &[13, 10] {

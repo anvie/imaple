@@ -97,7 +97,8 @@ command_handler!(SelectHandler, Select, (s, cmd, [ mailbox: Mailbox<'_> ]) => {
     Ok(CommandPipe::Next(cmd.clone(), None))
 });
 
-command_handler!(SearchHandler, Search, (s, cmd, [ charset: Option<Charset<'_>>,  criteria: SearchKey<'_>, uid:bool ]) => {
+command_handler!(SearchHandler, Search, (s, cmd,
+    [ charset: Option<Charset<'_>>,  criteria: SearchKey<'_>, uid:bool ]) => {
     debug!(
         "charset: {:?}, criteria: {:?}, uid: {:?}",
         charset, criteria, uid
