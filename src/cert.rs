@@ -1,3 +1,4 @@
+use log::debug;
 use rustls::{Certificate, PrivateKey};
 use std::fs::File;
 use std::io::BufReader;
@@ -5,6 +6,8 @@ use std::io::BufReader;
 pub(crate) fn load_certificates_from_pem(
     path: &str,
 ) -> std::io::Result<Vec<Certificate>> {
+    debug!("loading cert from `{}`", path);
+
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     let certs = rustls_pemfile::certs(&mut reader)?;
@@ -34,6 +37,8 @@ pub(crate) fn load_private_key_from_file_pkcs(
 pub(crate) fn load_private_key_from_file(
     path: &str,
 ) -> Result<PrivateKey, Box<dyn std::error::Error>> {
+    debug!("Loading private key from `{}`", path);
+
     let file = File::open(&path)?;
     let mut reader = BufReader::new(file);
     let mut keys = rustls_pemfile::rsa_private_keys(&mut reader)?;

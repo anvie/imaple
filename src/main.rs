@@ -13,24 +13,23 @@
 
 use clap::Parser;
 
+use dotenvy::dotenv;
 use tokio_rustls::TlsAcceptor;
 
 use log::debug;
 use result::Result;
 use rustls::ServerConfig;
-// use samotop::io::tls::RustlsProvider;
-// use samotop::mail::smime::Accounts;
 use serde::Deserialize;
 
 use std::sync::Arc;
-use std::{fs, io::ErrorKind, process::exit};
+use std::{env, fs, io::ErrorKind, process::exit};
 
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 mod cert;
-mod handlers;
 mod error;
+mod handlers;
 mod imap;
 mod imap_serv;
 mod result;
@@ -46,12 +45,6 @@ use crate::cert::{load_certificates_from_pem, load_private_key_from_file};
 struct Args {
     #[arg(short, long, default_value = "default.conf")]
     config: String,
-
-    #[arg(short, long, default_value = "false")]
-    imap: bool,
-
-    #[arg(short, long, default_value = "false")]
-    smtp: bool,
 }
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -73,11 +66,10 @@ fn default_smtp_port() -> u16 {
 // #[async_std::main]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
+    dotenv()?;
     env_logger::init();
 
     let args = Args::parse();
-    println!("Value for config: {}", args.config);
 
     let config: Config = match fs::read_to_string(&args.config) {
         Ok(config) => toml::from_str(&config).unwrap(),
@@ -90,22 +82,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     };
-    println!("Config: {:#?}", config);
 
-    // start_smtp_server(config).await
-
-    if args.imap && args.smtp {
-        println!("Please specify either --imap or --smtp");
-        exit(2);
-    }
-
-    if args.imap {
-        let _ = start_imap_server(config).await;
-    // } else if args.smtp {
-    //     start_smtp_server(config).await;
-    } else {
-        println!("Please specify either --imap or --smtp");
-        exit(2);
+    if let Err(err) = start_imap_server(config).await {
+        eprintln!("Error: {}", err);
+        exit(3);
     }
 
     Ok(())
@@ -115,15 +95,19 @@ async fn start_imap_server(
     conf: Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr = format!("127.0.0.1:{}", conf.imap_port);
-    println!("Starting IMAP server at port {}...", conf.imap_port);
+
     let listener = TcpListener::bind(addr).await?;
 
-    let cert_chain =
-        load_certificates_from_pem("keys/mail.nu.id/certificate.crt")
-            .expect("No cert file provided");
-    let mut keys =
-        vec![load_private_key_from_file("keys/mail.nu.id/private.key")
-            .expect("No private key provided")];
+    let cert_chain = load_certificates_from_pem(
+        &env::var("CAFILE").expect("No CAFILE env var"),
+    )
+    .expect("No cert file provided");
+
+    let mut keys = vec![load_private_key_from_file(
+        &env::var("KEYFILE").expect("No KEYFILE env var"),
+    )
+    .expect("No private key provided")];
+
     // let mut keys = rsa_private_keys(key_file).unwrap();
     // config.set_single_cert(cert_chain, keys.remove(0)).unwrap();
 
@@ -134,6 +118,8 @@ async fn start_imap_server(
         .unwrap();
 
     let acceptor = TlsAcceptor::from(Arc::new(config));
+
+    println!("Starting IMAP server at port {}...", conf.imap_port);
 
     loop {
         let (socket, _) = listener.accept().await?;
@@ -190,11 +176,6 @@ async fn start_imap_server(
                     CommandPipe::Quit => return,
                     _ => {}
                 }
-
-                // if let Err(e) = socket.write_all(&buf[0..n]).await {
-                //     eprintln!("Failed to write to socket; err = {:?}", e);
-                //     return;
-                // }
             }
         });
     }
@@ -223,41 +204,3 @@ where
 
     Ok(())
 }
-
-// async fn start_smtp_server(conf: Config) {
-//     println!("Starting SMTP server at port {}...", conf.smtp_port);
-
-//     use samotop::mail::{spf::Spf, *};
-//     use samotop::server::*;
-//     use samotop::smtp::*;
-
-//     let mut cert_store = rustls_19::RootCertStore::empty();
-//     cert_store
-//         .add_pem_file(&mut BufReader::new(File::open("cert.pem").unwrap()))
-//         .unwrap();
-//     let key_der = &mut BufReader::new(File::open("key.pem").unwrap());
-//     let mut key_der = rustls_19::internal::pemfile::pkcs8_private_keys(key_der).unwrap();
-
-//     let mut tls_config = rustls_19::ServerConfig::new(rustls_19::NoClientAuth::new());
-//     tls_config
-//         .set_single_cert(
-//             vec![rustls_19::Certificate(cert_store.get_subjects()[0].0.clone())],
-//             key_der.remove(0),
-//         )
-//         .unwrap();
-
-//     let acceptor = async_tls_old::TlsAcceptor::from(Arc::new(tls_config));
-
-//     let mail = Builder
-//         + Accounts::new(PathBuf::from("accounts"))
-//         + SessionLogger
-//         + Spf
-//         + EsmtpStartTls.with(SmtpParser, RustlsProvider::from(acceptor.clone()));
-//         // + Esmtp.with(SmtpParser);
-
-//     let mail = mail.build();
-
-//     let srv = TcpServer::on(format!("localhost:{}", conf.smtp_port)).serve(mail);
-
-//     srv.await.expect("success")
-// }

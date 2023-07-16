@@ -9,6 +9,7 @@ use imap_codec::{command::Command, core::Tag};
 pub enum CommandPipe<'a> {
     // next and prev command
     Next(Command<'a>, Option<Command<'a>>),
+    Noop,
     Quit,
 }
 

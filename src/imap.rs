@@ -19,6 +19,11 @@ where
 {
     let mut imap_sock = IMAPServ::new(socket);
 
+    // if only CRLF ignore
+    if buf.len() == 2 && buf[0] == 13 && buf[1] == 10 {
+        return Ok(CommandPipe::Noop);
+    }
+
     let cmd = command_decode(buf)?;
 
     debug!(":< {}", &cmd.body.name());
