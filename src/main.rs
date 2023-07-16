@@ -29,7 +29,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 mod cert;
-mod cmd_handlers;
+mod handlers;
 mod error;
 mod imap;
 mod imap_serv;

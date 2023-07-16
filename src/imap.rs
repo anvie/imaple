@@ -7,7 +7,7 @@ use log::debug;
 
 use tokio::io::{AsyncRead, AsyncWrite};
 
-use crate::cmd_handlers::*;
+use crate::handlers::*;
 use imap_codec::{codec::Decode, command::Command};
 
 pub async fn process_command<'a, 'b, IO>(
