@@ -1,0 +1,75 @@
+# This file is a YAML-formatted configuration file for GitHub Actions
+# For more information about how to create and use GitHub Actions, see
+# https://help.github.com/en/articles/about-github-actions
+
+name: Build IMAPPLE and deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set env
+      run: |
+        chmod +x ./.github/setenv.sh
+        ./.github/setenv.sh >> $GITHUB_ENV
+
+    - name: Install rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+
+    - name: Rust version check
+      shell: bash
+      run: |
+        cargo +stable --version
+        rustc +stable --version
+
+    - name: Build
+      shell: bash
+      run: cargo build --release
+
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: unnecessary
+
+    - name: Adding Known Hosts
+      run: ssh-keyscan -p ${{ secrets.SSH_PORT}} -H ${{ secrets.SSH_HOST }}  >> ~/.ssh/known_hosts
+
+    - name: Deploy with rsync
+      run: rsync -avzrhcP --chown www:www -e "ssh -p ${{ secrets.SSH_PORT }}" ./target/release/imapple ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ env.BIN_OUTPUT }}
+      # for musl
+      # run: rsync -avzrhcP --chown www:www -e "ssh -p ${{ secrets.SSH_PORT }}" ./target/x86_64-unknown-linux-musl/release/imapple ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ env.BIN_OUTPUT }}
+    
+    - name: Chown to user www group www
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          sudo chown www:www ${{ env.BIN_OUTPUT }}
+          sudo chmod +x ${{ env.BIN_OUTPUT }}
+          sudo rm /usr/local/bin/imapple
+          sudo ln -s ${{ env.BIN_OUTPUT }} /usr/local/bin/imapple
+  
+    - name: Restart IMAPPLE service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          systemctl restart imapple
+    

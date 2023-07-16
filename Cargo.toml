@@ -1,0 +1,27 @@
+[package]
+authors = ["Robin Syihab <r@nu.id>"]
+edition = "2018"
+name = "imaple"
+version = "0.0.1"
+
+[dependencies]
+anyhow = "1.0.71"
+async-std = {version = "1.12.0", features = ["attributes"]}
+clap = {version = "4.0.13", features = ["derive"]}
+dotenv = "0.15.0"
+env_logger = "0.10.0"
+imap-codec = "0.10"
+log = "0.4"
+serde = {version = "1.0", features = ["derive"]}
+tokio = {version = "1.29", features = ["full"]}
+toml = "0.7"
+
+async-rustls = "0.4.0"
+async-tls = "0.12.0"
+async_tls_old = {package = "async-tls", version = "0.11.0"}
+rustls = "0.21"
+rustls_19 = {package = "rustls", version = "0.19"}
+rustls-pemfile = "1.0"
+rustls_old = {package = "rustls", version = "0.20.8"}
+tokio-rustls = "0.24.1"
+
