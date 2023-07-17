@@ -10,14 +10,8 @@ use imap_codec::fetch::{
     Macro, MacroOrMessageDataItemNames, MessageDataItem, MessageDataItemName,
 };
 use imap_codec::response::Data;
-use imap_codec::search::SearchKey;
-use imap_codec::sequence::{SeqOrUid, Sequence, SequenceSet};
-use imap_codec::{
-    command::Command,
-    core::*,
-    mailbox::{ListMailbox, Mailbox},
-    secret::Secret,
-};
+
+use imap_codec::core::*;
 use log::debug;
 use tokio::io::{AsyncRead, AsyncWrite};
 
@@ -57,9 +51,9 @@ where
                     }
                     MessageDataItemName::Body => todo!(),
                     MessageDataItemName::BodyExt {
-                        section,
-                        partial,
-                        peek,
+                        section: _,
+                        partial: _,
+                        peek: _,
                     } => todo!(),
                     MessageDataItemName::BodyStructure => todo!(),
                     MessageDataItemName::Flags => todo!(),

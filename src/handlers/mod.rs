@@ -1,13 +1,8 @@
-use std::convert::TryFrom;
-use std::num::NonZeroU32;
-
 use crate::imap_serv::*;
 use crate::result::Result;
 
-use imap_codec::codec::Encode;
-use imap_codec::envelope::{Address, Envelope};
-use imap_codec::fetch::{MacroOrMessageDataItemNames, MessageDataItem};
-use imap_codec::response::Data;
+use imap_codec::fetch::MacroOrMessageDataItemNames;
+
 use imap_codec::search::SearchKey;
 use imap_codec::sequence::{SeqOrUid, Sequence, SequenceSet};
 use imap_codec::{
@@ -133,10 +128,7 @@ command_handler!(FetchHandler, Fetch, (s, cmd,
             debug!("seq_or_uid: {:?}", seq_or_uid);
             match seq_or_uid {
                 SeqOrUid::Value(seq) => {
-
                     fetch_handler::handle_seq_value(s, seq.get(), macro_or_item_names).await?;
-
-
                 }
                 SeqOrUid::Asterisk => {
                     debug!("uid: {:?}", uid);
