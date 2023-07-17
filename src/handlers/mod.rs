@@ -21,6 +21,8 @@ use log::debug;
 
 use tokio::io::{AsyncRead, AsyncWrite};
 
+mod fetch_handler;
+
 macro_rules! command_handler {
     ($name:ident, $cmd:ident, ($imap_sock:ident, $cmd2:ident ) => $cmd_body:expr ) => {
         pub(crate) struct $name;
@@ -123,62 +125,17 @@ command_handler!(LogoutHandler, Logout, (s, cmd) => {
 });
 
 command_handler!(FetchHandler, Fetch, (s, cmd,
-    [sequence_set: SequenceSet, _macro_or_item_names: MacroOrMessageDataItemNames<'_>, uid:bool] ) =>
+    [sequence_set: SequenceSet, macro_or_item_names: MacroOrMessageDataItemNames<'_>, uid:bool] ) =>
 {
+    debug!("macro_or_item_names: {:?}", macro_or_item_names);
     match sequence_set.0.as_ref()[0] {
         Sequence::Single(seq_or_uid) => {
             debug!("seq_or_uid: {:?}", seq_or_uid);
             match seq_or_uid {
                 SeqOrUid::Value(seq) => {
-                    let data = Data::Fetch {
-                        seq: NonZeroU32::new(seq.get()).unwrap(),
-                        items: NonEmptyVec::try_from(vec![
-                            MessageDataItem::Rfc822Size(1337),
-                            MessageDataItem::Envelope(
-                                Envelope {
-                                    date: NString::try_from("Mon, 7 Feb 1994 21:52:25 -0800").unwrap(),
-                                    subject: NString::try_from("Imaple is cool!").unwrap(),
-                                    from: vec![
-                                        Address {
-                                            name: NString::try_from("Joe Q. Public").unwrap(),
-                                            adl: NString(None),
-                                            mailbox: NString::try_from("john.q.public").unwrap(),
-                                            host: NString::try_from("example.com").unwrap(),
-                                        }
-                                    ],
-                                    sender: vec![
-                                        Address {
-                                            name: NString::try_from("Joe Q. Public").unwrap(),
-                                            adl: NString(None),
-                                            mailbox: NString::try_from("john.q.public").unwrap(),
-                                            host: NString::try_from("example.com").unwrap(),
-                                        }
-                                    ],
-                                    reply_to: vec![],
-                                    to: vec![
-                                        Address {
-                                            name: NString::try_from("Robin Syihab").unwrap(),
-                                            adl: NString(None),
-                                            mailbox: NString::try_from("robin").unwrap(),
-                                            host: NString::try_from("nu.id").unwrap(),
-                                        }
-                                    ],
-                                    cc: vec![],
-                                    bcc: vec![],
-                                    in_reply_to: NString(None),
-                                    message_id: NString::try_from(format!("{}", seq.get())).unwrap()
-                                }
-                            )
-                        ]).unwrap()
-                    };
 
-                    let resp = String::from_utf8(data.encode().dump()).unwrap();
+                    fetch_handler::handle_seq_value(s, seq.get(), macro_or_item_names).await?;
 
-                    // let resp = format!("{data}\r\n", data=data);
-
-                    debug!(":> {}", resp);
-
-                    let _ = s.write_data(data).await;
 
                 }
                 SeqOrUid::Asterisk => {
